@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { useFormContext } from "react-hook-form";
 
 import { EventFormProps, Events } from "../utils/types";
@@ -156,4 +156,4 @@ const EventForm: React.FC<EventFormProps> = ({
   );
 };
 
-export default EventForm;
+export default memo(EventForm);

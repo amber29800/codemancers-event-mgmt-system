@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { MouseEvent, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
@@ -7,7 +7,9 @@ import { Events, SelectedEvents } from "./utils/types";
 import EventForm from "./components/EventForm";
 import EventsList from "./components/EventsList";
 
-import { CirclePlus, Frown, X } from "lucide-react";
+import { Frown } from "lucide-react";
+import Header from "./components/Header";
+import EventInformationModal from "./components/EventInformationModal";
 
 const App = () => {
   const [events, setEvents] = useState<Events[]>(() => {
@@ -24,11 +26,11 @@ const App = () => {
 
   const { reset, setValue } = methods;
 
-  const handleOpenCreateEvent = (): void => {
+  const handleOpenCreateEvent = () => {
     setShowEventForm(true);
   };
 
-  const handleCloseCreateEvent = (): void => {
+  const handleCloseCreateEvent = () => {
     setShowEventForm(false);
     setEditId("");
 
@@ -39,17 +41,19 @@ const App = () => {
     reset();
   };
 
-  const handleUpdateClick = (): void => {
+  const handleUpdateClick = () => {
     setShowEventForm(true);
     setIsUpdate(true);
 
-    const selectedEvent = events.filter((item) => item.id === editId)[0]; // gets the data of seleted event after clicking update
+    const selectedEvent = events.find((item) => item.id === editId); // gets the data of seleted event after clicking update
 
-    setValue("eventName", selectedEvent.eventName);
-    setValue("dateAndTime", selectedEvent.dateAndTime);
-    setValue("location", selectedEvent.location);
-    setValue("description", selectedEvent.description);
-    setValue("capacity", selectedEvent.capacity);
+    if (selectedEvent) {
+      setValue("eventName", selectedEvent.eventName);
+      setValue("dateAndTime", selectedEvent.dateAndTime);
+      setValue("location", selectedEvent.location);
+      setValue("description", selectedEvent.description);
+      setValue("capacity", selectedEvent.capacity);
+    }
 
     localStorage.setItem("toUpdateEvent", JSON.stringify(selectedEvent));
     localStorage.setItem("editId", JSON.stringify(editId));
@@ -57,7 +61,8 @@ const App = () => {
     setSHowDetailsModal(false);
   };
 
-  const handleDeleteEvent = (): void => {
+  const handleDeleteEvent = (e: MouseEvent) => {
+    e.preventDefault();
     if (confirm("Are you sure, you want to delete this event?")) {
       const updatedEvents = events?.filter((item) => item.id !== editId); //removes event from events array
 
@@ -66,11 +71,11 @@ const App = () => {
       setShowEventForm(false);
       setEditId("");
       setSHowDetailsModal(false);
-      reset();
+      // reset();
     }
   };
 
-  const handleViewDetails = (id: string): void => {
+  const handleViewDetails = (id: string) => {
     setEditId(id);
     setSHowDetailsModal(true);
   };
@@ -133,7 +138,6 @@ const App = () => {
     setSelectedEvent(null);
     setEditId("");
   };
-
   function formatDate(dateString?: Date): string {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
@@ -159,8 +163,10 @@ const App = () => {
 
   useEffect(() => {
     if (editId !== "") {
-      const dummyEvent = events?.filter((item) => item.id === editId)[0];
-      setSelectedEvent(dummyEvent);
+      const dummyEvent = events?.find((item) => item.id === editId);
+      if(dummyEvent){
+        setSelectedEvent(dummyEvent);
+      }
     }
   }, [editId]);
 
@@ -169,130 +175,19 @@ const App = () => {
       {showDetailsModal &&
         selectedEvent &&
         createPortal(
-          <div className="w-full min-h-full absolute top-0 z-[1000] bg-[#000] opacity-60"></div>,
-          document.body
-        )}
-      {showDetailsModal &&
-        selectedEvent &&
-        createPortal(
-          <div className="min-w-full min-h-full absolute top-0 z-[1050]">
-            <div className="flex flex-col gap-1 sm:gap-2 w-11/12 xsm:w-9/12 sm:w-8/12 md:w-6/12 lg:w-5/12 xl:w-4/12 bg-white h-[75%] m-auto p-1 sm:p-2 mt-32 rounded-md">
-              <div className="flex items-center justify-between bg-gray-400 p-1 rounded-md">
-                <h1 className="text-xl xsm:text-2xl xl:text-3xl font-semibold">EVENT INFORMATION</h1>
-                <button
-                  className="p-1 rounded-full hover:shadow-md"
-                  onClick={closeEventInformationPopUpModal}
-                >
-                  <X className="w-5 h-5 sm:w-6 sm:h-6" color="#4a4a4a" />
-                </button>
-              </div>
-              <div className="flex flex-col gap-1 max-h-72 overflow-auto">
-                <div className="flex flex-col gap-2">
-                  <div className="flex">
-                    <p className="font-semibold w-4/12 xsm:w-3/12 sm:w-1/4 text-sm sm:text-base">
-                      Event Name:
-                    </p>
-                    <p className="w-3/4 pl-1 text-sm sm:text-base">
-                      {selectedEvent?.eventName}
-                    </p>
-                  </div>
-                  <div className="border-[0.2px] border-solid border-[#acacac]"></div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <div className="flex">
-                    <p className="font-semibold w-4/12 xsm:w-3/12 sm:w-1/4 text-sm sm:text-base">
-                      Date:
-                    </p>
-                    <p className="w-3/4 pl-1 text-sm sm:text-base">
-                      {formatDate(selectedEvent?.dateAndTime)}
-                    </p>
-                  </div>
-                  <div className="border-[0.2px] border-solid border-[#acacac]"></div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <div className="flex">
-                    <p className="font-semibold w-4/12 xsm:w-3/12 sm:w-1/4 text-sm sm:text-base">
-                      Time:
-                    </p>
-                    <p className="w-3/4 pl-1 text-sm sm:text-base">
-                      {formatTime(selectedEvent?.dateAndTime)}
-                    </p>
-                  </div>
-                  <div className="border-[0.2px] border-solid border-[#acacac]"></div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <div className="flex">
-                    <p className="font-semibold w-4/12 xsm:w-3/12 sm:w-1/4 text-sm sm:text-base">
-                      Location:
-                    </p>
-                    <p className="w-3/4 pl-1 text-sm sm:text-base">
-                      {selectedEvent?.location}
-                    </p>
-                  </div>
-                  <div className="border-[0.2px] border-solid border-[#acacac]"></div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <div className="flex">
-                    <p className="font-semibold w-4/12 xsm:w-3/12 sm:w-1/4 text-sm sm:text-base">
-                      Description
-                    </p>
-                    <p className="w-3/4 pl-1 text-sm sm:text-base">
-                      {selectedEvent?.description}
-                    </p>
-                  </div>
-                  <div className="border-[0.2px] border-solid border-[#acacac]"></div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <div className="flex">
-                    <p className="font-semibold w-4/12 xsm:w-3/12 sm:w-1/4 text-sm sm:text-base">
-                      Capacity
-                    </p>
-                    <p className="w-3/4 pl-1 text-sm sm:text-base">
-                      {selectedEvent?.capacity}
-                    </p>
-                  </div>
-                  <div className="border-[0.2px] border-solid border-[#acacac]"></div>
-                </div>
-              </div>
-              <div className="flex justify-center gap-1">
-                <button
-                  className="transition delay-[50ms] bg-yellow-600 text-sm md:text-base lg:text-lg text-white rounded-[5px] px-5 sm:px-7 py-[2px] sm:py-1 hover:bg-yellow-500"
-                  onClick={handleUpdateClick}
-                >
-                  Update
-                </button>
-                <button
-                  className="transition delay-[50ms] bg-red-600 text-sm md:text-base lg:text-lg text-white rounded-[5px] px-5 sm:px-7 py-[2px] sm:py-1 hover:bg-red-500 "
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleDeleteEvent();
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>,
+          <EventInformationModal
+            closeEventInformationPopUpModal={closeEventInformationPopUpModal}
+            selectedEvent={selectedEvent}
+            formatDate={formatDate}
+            formatTime={formatTime}
+            handleUpdateClick={handleUpdateClick}
+            handleDeleteEvent={handleDeleteEvent}
+          />,
           document.body
         )}
       <div className="bg-blue-900 h-[100vh] w-[100%] p-3 sm:p-6 md:p-10 xl:px-14">
         <div className="flex flex-col gap-3 h-[100%] bg-gray-200 shadow-2xl rounded-xl p-2">
-          <div className="flex justify-between p-1 sm:p-2 bg-gray-400 rounded-lg">
-            <p className="text-xl tracking-wide xsm:tracking-wider xsm:text-2xl sm:text-3xl font-semibold">
-              EVENT PORTAL
-            </p>
-            <button
-              className="flex items-center justify-center gap-1 bg-blue-950 text-[12px] xsm:text-sm sm:text-base text-white px-2 py-1 sm:py-2 rounded-lg hover:bg-blue-900"
-              onClick={handleOpenCreateEvent}
-            >
-              <CirclePlus
-                className="h-4 w-4 xsm:w-5 xsm:h-5 sm:w-6 sm:h-6"
-                color="#ffffff"
-                size={24}
-              />
-              <p className="leading-[14px]">Create Event</p>
-            </button>
-          </div>
+          <Header handleOpenCreateEvent={handleOpenCreateEvent} />
           <div className="overflow-auto">
             {showEventForm && (
               <EventForm
